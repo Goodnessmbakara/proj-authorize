@@ -138,7 +138,7 @@ class ChangePasswordView(APIView):
 
             return Response({'detail': 'Password updated successfully.'}, status=status.HTTP_200_OK)
 
-        return Response(serializer.errors, status=status)
+        return Response(serializer.errors, status=status.HTTP_404_NOT_FOUND)
 
 class DeleteAccountView(APIView):
     """
