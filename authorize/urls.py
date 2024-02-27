@@ -17,4 +17,5 @@ urlpatterns = [
     path('change-password/', views.ChangePasswordView.as_view(), name='change-password'),
     path('delete-account/', views.DeleteAccountView.as_view(), name='delete-account'),
     path('forgot-password/', views.requestForgotPasswordPasscode, name='request-forgot-password-passcode'),
+    path('forgot-password/confirm/', views.newPassword, name='request-forgot-password-passcode'),
 ]

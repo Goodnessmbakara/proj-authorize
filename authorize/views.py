@@ -209,6 +209,7 @@ class RegisterView(GenericAPIView):
             serializer.save()
         user = serializer.data
 
+
         user_email = User.objects.get(email=user['email'])
         token = RefreshToken.for_user(user_email).access_token
         refresh_token = RefreshToken.for_user(user_email)
@@ -231,9 +232,27 @@ def generate_passcode():
     return get_random_string(length=6, allowed_chars='0123456789')
 
 @api_view(['POST'])
-def requestForgotPasswordPasscode(request):
+def newPassword(request):
+    data = request.data
+    passcode = data.get('passcode')
 
+    user = User.objects.filter(passcode=passcode).first()
+
+    if user:
+        new_password = data.get('new_password')
+        user.set_password(new_password)
+        user.save()
+
+        # Updating the session auth hash to avoid logouts after a password change
+        update_session_auth_hash(request, request.user)
+        return Response({"message":"New password created"}, status=status.HTTP_201_CREATED)
+    else:
+        return Response({"message":"User doesnt exist"}, status=status.HTTP_404_NOT_FOUND)
+
+@api_view(['POST'])
+def requestForgotPasswordPasscode(request):
     email = request.data.get('email', '')
+
 
     try:
         user = User.objects.get(email=email)
@@ -243,10 +262,9 @@ def requestForgotPasswordPasscode(request):
 
         # Send the passcode to the user's email
         email_subject = 'Forgot Password Passcode'
-        email_message = f'Your passcode for resetting your password: {passcode}'
-        from_email = 'shedenbright@gmail.com'  # Change to your email address
-        recipient_list = [email]
-        send_mail(email_subject, email_message, from_email, recipient_list)
+        email_body = f'Your passcode for resetting your password: {passcode}'
+        data = {'email_subject' : email_subject,'email_body':email_body,'to_email':user.email}
+        utils.Util.send_email(data)
 
         return Response({"message": "Passcode sent to your email."}, status=status.HTTP_200_OK)
     except User.DoesNotExist:
