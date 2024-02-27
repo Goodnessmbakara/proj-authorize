@@ -1,7 +1,7 @@
 from rest_framework.decorators import api_view
-from rest_framework.permissions import IsAuthenticated, IsAdminUser
+
 from rest_framework.response import Response
-from django.contrib.auth.hashers import make_password
+
 from rest_framework import status
 
 from django.contrib.auth import get_user_model
@@ -11,22 +11,18 @@ from .import utils
 
 from django.core.mail import send_mail
 from django.utils.crypto import get_random_string
-from django.contrib.auth import get_user_model
-from rest_framework import permissions,generics,viewsets
+from rest_framework import permissions
 from rest_framework.generics import GenericAPIView,UpdateAPIView
 
 from rest_framework.views import APIView
-from rest_framework.response import Response
+
 from rest_framework import status
-from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework.decorators import api_view
+from rest_framework_simplejwt.tokens import RefreshToken, TokenError, AccessToken
+
 from rest_framework.pagination import PageNumberPagination
 
-
-from django.core.mail import send_mail
 from django.contrib.sites.shortcuts import get_current_site
 
-from .utils import Util
 from django.urls import reverse
 import jwt
 
@@ -84,6 +80,8 @@ class LogoutView(APIView):
 
     Accepts a POST request with a refresh token and revokes the token, effectively logging the user out.
     """
+    permission_classes = [permissions.IsAuthenticated]
+
     def post(self, request):
         """
         Handle POST request for user logout.
@@ -95,13 +93,20 @@ class LogoutView(APIView):
         - `Response`: JSON response indicating the success or failure of the logout operation.
         """
         try:
-            # Extract the refresh token from the request
-            refresh_token = request.data['refresh_token']
-            token = RefreshToken(refresh_token)
-            token.blacklist()
-            return Response({"detail": "Successfully logged out."}, status=status.HTTP_200_OK)
-        except Exception as e:
-            return Response({"detail": "Invalid refresh token."}, status=status.HTTP_400_BAD_REQUEST)
+            # Extract the access token from the request
+            access_token = request.headers.get('Authorization', '')[7:]
+
+            refresh_token = RefreshToken.for_user(request.user)
+            print(refresh_token)
+            if not refresh_token:
+                return Response({"detail": "Access token not provided."}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Blacklist the refresh token
+            RefreshToken(refresh_token).blacklist()
+            return Response({"detail": "Successfully logged out."}, status=status.HTTP_204_NO_CONTENT)
+
+        except TokenError:
+            return Response({"detail": "Invalid refresh token."}, status=status.HTTP_401_UNAUTHORIZED)
 
 class ChangePasswordView(APIView):
     """
@@ -188,7 +193,7 @@ class ResendVerificationEmailView(GenericAPIView):
 
            data = {'email_body':email_body,'to_email':user.email,
                   'email_subject':'Verify your email'}
-           Util.send_email(data=data)
+           utils.Util.send_email(data=data)
 
            return Response({'msg':'The verification email has been sent'}, status=status.HTTP_201_CREATED)
        except User.DoesNotExist:
