@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from django.contrib.auth import get_user_model
+from django.db import transaction
+
 
 from django.contrib.auth import authenticate
 # from django.contrib.sites.models import Site
@@ -9,9 +10,7 @@ from rest_framework.authtoken.models import Token
 
 from django.contrib.auth.password_validation import validate_password
 
-
-User = get_user_model()
-
+from .models import User
 
 class PasswordChangeSerializer(serializers.Serializer):
    """
@@ -47,10 +46,10 @@ class UserRegisterSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Passwords do not match")
         return attrs
 
+    @transaction.atomic
     def create(self, validated_data):
         validated_data.pop('password2', None)
         user = User.objects.create_user(**validated_data)
-        Token.objects.create(user=user)
         return user
 
 class EmailVerificationSerializer(serializers.ModelSerializer):
@@ -79,5 +78,5 @@ class LoginSerializer(serializers.Serializer):
 class CustomUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ('id',  'email', 'username')
+        fields = ('id',  'email')
 

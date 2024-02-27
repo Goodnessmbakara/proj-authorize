@@ -162,7 +162,7 @@ class ResendVerificationEmailView(GenericAPIView):
            relative_link = reverse('email-verify')
            protocol = request.scheme
            absurl = protocol+'://'+current_site+relative_link+"?token="+str(token)
-           email_body = 'Hi '+ user.username + ' this is the resent link to verify your email \n' + absurl
+           email_body = 'Hi '+ user.first_name + ' this is the resent link to verify your email \n' + absurl
 
            data = {'email_body':email_body,'to_email':user.email,
                   'email_subject':'Verify your email'}
@@ -178,9 +178,10 @@ class RegisterView(GenericAPIView):
     def post(self, request):
         data = request.data
         serializer = self.serializer_class(data=data)
-        serializer.is_valid(raise_exception=True)
+        if serializer.is_valid(raise_exception=True):
+            serializer.save()
         user = serializer.data
-        print(user,"funnny is he")
+        print(user)
 
         user_email = User.objects.get(email=user['email'])
         token = RefreshToken.for_user(user_email).access_token
@@ -190,7 +191,7 @@ class RegisterView(GenericAPIView):
         relative_link = reverse('email-verify')
         protocol = request.scheme
         absurl = protocol+'://'+current_site+relative_link+"?token="+str(token)
-        email_body = 'Hi '+ user['username'] + \
+        email_body = 'Hi '+ user['first_name'] + \
             ' Use the link below to verify your email \n' + absurl
         data = {'email_body': email_body, 'to_email': user['email'],
                 'email_subject': 'Verify your email'}
