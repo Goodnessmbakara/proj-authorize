@@ -10,8 +10,6 @@ from rest_framework.authtoken.models import Token
 from django.contrib.auth.password_validation import validate_password
 
 
-from .models import TutorProfile, StudentProfile
-
 User = get_user_model()
 
 

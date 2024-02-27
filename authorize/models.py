@@ -4,6 +4,7 @@ from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from django.utils import timezone
 
 from rest_framework_simplejwt.tokens import RefreshToken
+from django.contrib.auth.models import Group, Permission
 
 from . managers import UserManager
 
@@ -17,6 +18,9 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_superuser = models.BooleanField(default=False, null=True, blank=True)
     date_joined = models.DateTimeField(auto_now_add=True)
     last_login = models.DateTimeField(default=timezone.now)
+    # groups = models.ManyToManyField(Group)
+    # user_permissions = models.ManyToManyField(Permission)
+
 
     @property
     def get_full_name(self):
