@@ -66,12 +66,14 @@ class LoginSerializer(serializers.Serializer):
         email = data.get('email')
         password = data.get('password')
 
-        user = authenticate(request=self.context.get('request'), email=email, password=password)
+        if email and password:
+            user = authenticate(email=email, password=password)
 
-        if not user:
-            raise serializers.ValidationError("Invalid email or password.")
+            if user:
+                data['user'] = user
+            else:
+                raise serializers.ValidationError("Invalid credentials. Please try again.")
 
-        data['user'] = user
         return data
 
 
